@@ -13,6 +13,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Calculator = lazy(() => import('./pages/Calculator'));
 const Strategies = lazy(() => import('./pages/Strategies'));
 const News = lazy(() => import('./pages/News'));
+const StockPrediction = lazy(() => import('./pages/StockPrediction'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Protected Route component
@@ -64,17 +65,21 @@ function App() {
               />
               <Route 
                 path="/strategies" 
-                element={
-                  <ProtectedRoute>
-                    <Strategies />
-                  </ProtectedRoute>
-                } 
+                element={<Strategies />} 
               />
               <Route 
                 path="/news" 
                 element={
                   <ProtectedRoute>
                     <News />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/stocks" 
+                element={
+                  <ProtectedRoute>
+                    <StockPrediction />
                   </ProtectedRoute>
                 } 
               />

@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, BarChart3, Shield, Target, LineChart, Cpu } from 'lucide-react';
+import { ChevronRight, BarChart3, Shield, Target, LineChart } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { fetchNewsData } from '../services/newsService';
+import { useAuth } from '../contexts/AuthContext';
 
 const Landing = () => {
+  const { isAuthenticated } = useAuth();
   const { data: newsData } = useQuery({
     queryKey: ['news'],
     queryFn: fetchNewsData,
@@ -48,12 +50,39 @@ const Landing = () => {
             <p className="text-xl mb-8 text-white/90">
               Get personalized investment recommendations based on your financial profile, risk tolerance, and goals.
             </p>
-            <Link 
-              to="/calculator" 
-              className="inline-flex items-center bg-white text-blue-600 px-6 py-3 rounded-md font-medium hover:bg-blue-50 transition-colors"
-            >
-              Try Investment Calculator <ChevronRight size={20} className="ml-2" />
-            </Link>
+            
+            {/* Show different CTA based on authentication state */}
+            {isAuthenticated ? (
+              <div className="flex space-x-4">
+                <Link 
+                  to="/dashboard" 
+                  className="inline-flex items-center bg-white text-blue-600 px-6 py-3 rounded-md font-medium hover:bg-blue-50 transition-colors"
+                >
+                  Go to Dashboard <ChevronRight size={20} className="ml-2" />
+                </Link>
+                <Link 
+                  to="/strategies" 
+                  className="inline-flex items-center bg-transparent border border-white text-white px-6 py-3 rounded-md font-medium hover:bg-white/10 transition-colors"
+                >
+                  View Strategies <ChevronRight size={20} className="ml-2" />
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                <Link 
+                  to="/register" 
+                  className="inline-flex items-center bg-white text-blue-600 px-6 py-3 rounded-md font-medium hover:bg-blue-50 transition-colors"
+                >
+                  Create Account <ChevronRight size={20} className="ml-2" />
+                </Link>
+                <Link 
+                  to="/calculator" 
+                  className="inline-flex items-center bg-transparent border border-white text-white px-6 py-3 rounded-md font-medium hover:bg-white/10 transition-colors"
+                >
+                  Try Investment Calculator <ChevronRight size={20} className="ml-2" />
+                </Link>
+              </div>
+            )}
           </div>
         </div>
         
@@ -117,16 +146,50 @@ const Landing = () => {
       <section className="py-16 md:py-24 bg-gradient-to-r from-blue-600 to-green-600 text-white">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Start Your Investment Journey?</h2>
-            <p className="text-xl mb-8 text-white/90">
-              Get instant investment recommendations tailored to your financial profile.
-            </p>
-            <Link 
-              to="/calculator" 
-              className="inline-flex items-center bg-white text-blue-600 px-8 py-4 rounded-md font-medium text-lg hover:bg-blue-50 transition-colors"
-            >
-              Try Our Calculator <ChevronRight size={20} className="ml-2" />
-            </Link>
+            {/* Different content for authenticated and non-authenticated users */}
+            {isAuthenticated ? (
+              <>
+                <h2 className="text-3xl md:text-4xl font-bold mb-6">Explore More Investment Opportunities</h2>
+                <p className="text-xl mb-8 text-white/90">
+                  Check out our strategies and tools to optimize your investment portfolio.
+                </p>
+                <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+                  <Link 
+                    to="/dashboard" 
+                    className="inline-flex items-center bg-white text-blue-600 px-8 py-4 rounded-md font-medium text-lg hover:bg-blue-50 transition-colors"
+                  >
+                    Your Dashboard <ChevronRight size={20} className="ml-2" />
+                  </Link>
+                  <Link 
+                    to="/strategies" 
+                    className="inline-flex items-center bg-transparent border border-white text-white px-8 py-4 rounded-md font-medium text-lg hover:bg-white/10 transition-colors"
+                  >
+                    Investment Strategies <ChevronRight size={20} className="ml-2" />
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Start Your Investment Journey?</h2>
+                <p className="text-xl mb-8 text-white/90">
+                  Get instant investment recommendations tailored to your financial profile.
+                </p>
+                <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+                  <Link 
+                    to="/register" 
+                    className="inline-flex items-center bg-white text-blue-600 px-8 py-4 rounded-md font-medium text-lg hover:bg-blue-50 transition-colors"
+                  >
+                    Create Account <ChevronRight size={20} className="ml-2" />
+                  </Link>
+                  <Link 
+                    to="/calculator" 
+                    className="inline-flex items-center bg-transparent border border-white text-white px-8 py-4 rounded-md font-medium text-lg hover:bg-white/10 transition-colors"
+                  >
+                    Try Our Calculator <ChevronRight size={20} className="ml-2" />
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>

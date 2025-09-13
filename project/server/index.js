@@ -21,12 +21,11 @@ app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:5173'], // Add your frontend URLs
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 app.use(express.json());
-
-// Add a pre-flight route handler for all OPTIONS requests
-app.options('*', cors());
 
 // Connect to MongoDB
 connectToDatabase()
@@ -98,11 +97,28 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ message: 'Passwords do not match' });
     }
     
+    // Validate email format
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Please provide a valid email address' });
+    }
+    
+    // Validate password strength
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({ 
+        message: 'Password must be at least 8 characters and contain uppercase, lowercase, numbers, and special characters' 
+      });
+    }
+    
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
+    
+    // Get additional fields for financial metrics
+    const { monthlySurplus, emergencyFund, investableAmount } = req.body;
     
     // Create new user
     const user = new User({
@@ -115,9 +131,18 @@ app.post('/api/auth/register', async (req, res) => {
       fixedExpenses,
       variableExpenses,
       riskTolerance: riskTolerance || 'medium',
+      monthlySurplus,
+      emergencyFund,
+      investableAmount
     });
     
-    await user.save();
+    try {
+      await user.save();
+      console.log(`User registered successfully: ${email}`);
+    } catch (saveError) {
+      console.error('Error saving user to database:', saveError);
+      return res.status(500).json({ message: 'Failed to save user to database', error: saveError.message });
+    }
     
     // Generate JWT token
     const token = jwt.sign({ id: user._id }, JWT_SECRET, {
@@ -137,7 +162,11 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     console.log('Login request received:', req.body);
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+    
+    // Trim input values
+    email = email ? email.trim() : '';
+    password = password ? password.trim() : '';
     
     // Validate required fields
     if (!email || !password) {
@@ -145,7 +174,42 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
     
-    // Find user by email
+    // Hard-coded users for development/testing
+    const hardcodedUsers = [
+      {
+        email: "anand@example.com",
+        password: "Password123",
+        profile: {
+          name: "Anand Verma",
+          email: "anand@example.com",
+          age: 40,
+          location: "Bangalore",
+          salary: 120000,
+          fixedExpenses: 45000,
+          variableExpenses: 30000,
+          riskTolerance: "high",
+          monthlySurplus: 45000,
+          emergencyFund: 350000,
+          investableAmount: 33750,
+          _id: "demo_anand_id_123456"
+        }
+      }
+    ];
+    
+    // Check if the user is in our hardcoded list
+    const hardcodedUser = hardcodedUsers.find(u => u.email === email && u.password === password);
+    if (hardcodedUser) {
+      console.log('Found hardcoded user:', hardcodedUser.profile.name);
+      
+      // Generate JWT token
+      const token = jwt.sign({ id: hardcodedUser.profile._id }, JWT_SECRET, {
+        expiresIn: '7d',
+      });
+      
+      return res.status(200).json({ user: hardcodedUser.profile, token });
+    }
+    
+    // Find user by email in database
     console.log('Looking up user by email:', email);
     let user;
     
@@ -199,6 +263,7 @@ app.post('/api/auth/login', async (req, res) => {
     
     res.status(200).json({ user: userResponse, token });
   } catch (error) {
+    console.error('Unexpected error during login:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

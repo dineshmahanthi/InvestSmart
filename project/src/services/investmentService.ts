@@ -141,12 +141,14 @@ export function generatePortfolioRecommendations(user: UserProfile): Portfolio {
 // Calculate financial metrics
 export function calculateFinancialMetrics(formData: {
   salary: number;
+  additionalIncome?: number;
   fixedExpenses: number;
   variableExpenses: number;
 }) {
-  const { salary, fixedExpenses, variableExpenses } = formData;
+  const { salary, additionalIncome = 0, fixedExpenses, variableExpenses } = formData;
   
-  const monthlySurplus = salary - fixedExpenses - variableExpenses;
+  const totalIncome = salary + additionalIncome;
+  const monthlySurplus = totalIncome - fixedExpenses - variableExpenses;
   const emergencyFund = (fixedExpenses + variableExpenses) * 6;
   const investableAmount = Math.max(0, monthlySurplus * 0.3);
   

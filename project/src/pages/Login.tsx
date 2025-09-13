@@ -8,7 +8,7 @@ import AuthDebugger from '../debug/AuthDebugger';
 const Login = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated, isLoading, error: authError, user } = useAuth();
-  const [email, setEmail] = useState('rajesh@example.com'); // Pre-filled for testing
+  const [email, setEmail] = useState('anand@example.com'); // Pre-filled for testing
   const [password, setPassword] = useState('Password123'); // Pre-filled for testing
   const [error, setError] = useState('');
 

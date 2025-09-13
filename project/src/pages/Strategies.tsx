@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight, TrendingUp, Shield, Target, BarChart3, PieChart, LineChart } from 'lucide-react';
+import { ChevronRight, TrendingUp, BarChart3, PieChart, LineChart } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import { useAuth } from '../contexts/AuthContext';
+import SavingsGoalCalculator from '../components/calculator/SavingsGoalCalculator';
 
 const Strategies = () => {
+  const { isAuthenticated } = useAuth();
   const strategies = [
     {
       title: "Value Investing",
@@ -90,30 +93,70 @@ const Strategies = () => {
             </div>
           </div>
         </section>
-
-        {/* CTA Section */}
-        <section className="bg-gray-50 py-16">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-6">Ready to Start Investing?</h2>
-            <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-              Put these strategies to work with our AI-powered platform. Get personalized recommendations based on your risk profile and financial goals.
-            </p>
-            <div className="flex justify-center gap-4">
-              <Link 
-                to="/register" 
-                className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Create Account
-              </Link>
-              <Link 
-                to="/login" 
-                className="px-6 py-3 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
-              >
-                Sign In
-              </Link>
+        
+        {/* Savings Goal Calculator Section */}
+        <section className="py-16 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="mb-12 text-center">
+              <h2 className="text-3xl font-bold mb-4">Plan Your Major Purchases</h2>
+              <p className="text-gray-600 max-w-3xl mx-auto">
+                Whether you're dreaming of a new car or your own home, our calculator will help you
+                determine exactly how long it will take to save for your goal based on your 
+                current finances.
+              </p>
+            </div>
+            
+            <div className="max-w-4xl mx-auto">
+              <SavingsGoalCalculator />
             </div>
           </div>
         </section>
+
+        {/* CTA Section - Only shown when user is not authenticated */}
+        {!isAuthenticated && (
+          <section className="bg-gray-50 py-16">
+            <div className="container mx-auto px-4 text-center">
+              <h2 className="text-3xl font-bold mb-6">Ready to Start Investing?</h2>
+              <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+                Put these strategies to work with our AI-powered platform. Get personalized recommendations based on your risk profile and financial goals.
+              </p>
+              <div className="flex justify-center gap-4">
+                <Link 
+                  to="/register" 
+                  className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Create Account
+                </Link>
+                <Link 
+                  to="/login" 
+                  className="px-6 py-3 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+                >
+                  Sign In
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+        
+        {/* Alternative CTA for authenticated users */}
+        {isAuthenticated && (
+          <section className="bg-gray-50 py-16">
+            <div className="container mx-auto px-4 text-center">
+              <h2 className="text-3xl font-bold mb-6">Apply These Strategies</h2>
+              <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+                Enhance your investment portfolio with these strategies. Our AI-powered platform can help you implement them effectively.
+              </p>
+              <div className="flex justify-center gap-4">
+                <Link 
+                  to="/dashboard" 
+                  className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Back to Dashboard
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
       </main>
       
       <Footer />

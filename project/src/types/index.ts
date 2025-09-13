@@ -8,6 +8,7 @@ export interface UserProfile {
   age: number;
   location?: string;
   salary: number;
+  additionalIncome?: number; // Optional additional income source
   fixedExpenses: number;
   variableExpenses: number;
   riskTolerance: RiskTolerance;
@@ -22,13 +23,31 @@ export interface RegistrationFormData {
   email: string;
   password: string;
   confirmPassword: string;
-  otp: string;
   age: number;
   location: string;
   salary: number;
+  additionalIncome?: number;
   fixedExpenses: number;
   variableExpenses: number;
   riskTolerance: RiskTolerance;
+}
+
+// Server registration data (includes confirmPassword and calculated fields)
+export interface ServerRegistrationData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string; // Added for server validation
+  age: number;
+  location: string;
+  salary: number;
+  additionalIncome?: number;
+  fixedExpenses: number;
+  variableExpenses: number;
+  riskTolerance: RiskTolerance;
+  monthlySurplus: number;
+  emergencyFund: number;
+  investableAmount: number;
 }
 
 // Market data types

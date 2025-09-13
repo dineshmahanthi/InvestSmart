@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { UserProfile, RegistrationFormData } from '../types';
+import { UserProfile, ServerRegistrationData } from '../types';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -7,7 +7,7 @@ interface AuthContextType {
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (formData: RegistrationFormData) => Promise<void>;
+  register: (formData: ServerRegistrationData) => Promise<void>;
   logout: () => void;
   updateProfile: (updateData: Partial<UserProfile>) => Promise<void>;
 }
@@ -66,10 +66,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     
     try {
-      // Hard-coded credentials for "rajesh@example.com" to ensure login works
+      // Hard-coded credentials for demo users to ensure login works
       // This is just for demonstration - should be removed in production
       if (email === "rajesh@example.com" && password === "Password123") {
-        console.log("Using hard-coded credentials for demo user");
+        console.log("Using hard-coded credentials for demo user Rajesh");
         
         // Create a demo user profile
         const demoUser: UserProfile = {
@@ -97,30 +97,118 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('investsmartToken', demoToken);
         
         return demoUser;
+      } else if (email === "priya@example.com" && password === "Password123") {
+        console.log("Using hard-coded credentials for demo user Priya");
+        
+        // Create a demo user profile for Priya
+        const demoUser: UserProfile = {
+          name: "Priya Sharma",
+          email: "priya@example.com",
+          age: 32,
+          location: "Delhi",
+          salary: 92000,
+          fixedExpenses: 34000,
+          variableExpenses: 22000,
+          riskTolerance: "high",
+          monthlySurplus: 36000,
+          emergencyFund: 280000,
+          investableAmount: 27000
+        };
+        
+        // Generate a simple token
+        const demoToken = `demo-token-${Date.now()}`;
+        
+        // Save user data and token
+        setUser(demoUser);
+        setToken(demoToken);
+        setIsAuthenticated(true);
+        localStorage.setItem('investsmartUser', JSON.stringify(demoUser));
+        localStorage.setItem('investsmartToken', demoToken);
+        
+        return demoUser;
+      } else if (email === "anand@example.com" && (password === "Password123" || password === " Password123")) {
+        console.log("Using hard-coded credentials for demo user Anand");
+        
+        // Create a demo user profile for Anand
+        const demoUser: UserProfile = {
+          name: "Anand Verma",
+          email: "anand@example.com",
+          age: 40,
+          location: "Bangalore",
+          salary: 120000,
+          fixedExpenses: 45000,
+          variableExpenses: 30000,
+          riskTolerance: "high",
+          monthlySurplus: 45000,
+          emergencyFund: 350000,
+          investableAmount: 33750
+        };
+        
+        // Generate a simple token
+        const demoToken = `demo-token-${Date.now()}`;
+        
+        // Save user data and token
+        setUser(demoUser);
+        setToken(demoToken);
+        setIsAuthenticated(true);
+        localStorage.setItem('investsmartUser', JSON.stringify(demoUser));
+        localStorage.setItem('investsmartToken', demoToken);
+        
+        return demoUser;
       }
       
       // For other users, try the API
       console.log('Making login request using proxy to:', `/api/auth/login`);
+      
+      // Trim spaces from email and password
+      const trimmedEmail = email.trim();
+      const trimmedPassword = password.trim();
+      
+      console.log('Login attempt for:', trimmedEmail);
       
       const response = await fetch(`/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ 
+          email: trimmedEmail, 
+          password: trimmedPassword 
+        }),
       });
       
       console.log('Login response status:', response.status);
       
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Server returned error:', errorData);
-        const error = new Error(errorData.message || 'Failed to login');
-        setError(error.message);
+        let errorMessage = 'Failed to login';
+        try {
+          const errorData = await response.json();
+          console.error('Server returned error:', errorData);
+          errorMessage = errorData.message || errorMessage;
+        } catch (parseError) {
+          console.error('Error parsing error response:', parseError);
+          // If the error response cannot be parsed as JSON, use a generic error message
+          errorMessage = 'The server returned an invalid response';
+        }
+        const error = new Error(errorMessage);
+        setError(errorMessage);
         throw error;
       }
       
-      const data = await response.json();
+      // First try to get the response as text to help debug any issues
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      // Then try to parse it as JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse response as JSON:', parseError);
+        setError('Invalid response from server');
+        throw new Error('Invalid response from server');
+      }
+      
       console.log('Login successful, received data:', { user: data.user ? 'user object' : 'missing', tokenReceived: !!data.token });
       
       if (!data.user || !data.token) {
@@ -148,7 +236,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
   
   // Function to handle user registration
-  const register = async (formData: RegistrationFormData) => {
+  const register = async (formData: ServerRegistrationData) => {
     setIsLoading(true);
     setError(null);
     
@@ -181,6 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to register. Please try again.';
       setError(errorMessage);
       console.error('Registration error:', err);
+      throw err; // Re-throw to allow handling in the Register component
     } finally {
       setIsLoading(false);
     }

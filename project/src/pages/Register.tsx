@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, User, Briefcase, TrendingUp, Lock, Mail } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { RegistrationFormData, RiskTolerance, UserProfile } from '../types';
+import { RegistrationFormData, RiskTolerance, ServerRegistrationData } from '../types';
 import { calculateFinancialMetrics } from '../services/investmentService';
 import { formatIndianCurrency } from '../services/marketService';
 import Header from '../components/layout/Header';
@@ -10,15 +10,15 @@ import Footer from '../components/layout/Footer';
 
 const Register = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, register: registerUser } = useAuth();
   
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<RegistrationFormData>({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    otp: '',
     age: 30,
     location: '',
     salary: 75000,
@@ -28,8 +28,6 @@ const Register = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isOtpSent, setIsOtpSent] = useState(false);
-  const [isOtpVerified, setIsOtpVerified] = useState(false);
 
   const financialMetrics = calculateFinancialMetrics({
     salary: formData.salary,
@@ -71,9 +69,6 @@ const Register = () => {
       } else if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Passwords do not match';
       }
-      if (!isOtpVerified) {
-        newErrors.otp = 'Please verify your email with OTP';
-      }
       if (!formData.age) {
         newErrors.age = 'Age is required';
       } else if (formData.age < 18) {
@@ -92,33 +87,7 @@ const Register = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSendOtp = async () => {
-    if (!formData.email || !/^\S+@\S+\.\S+$/.test(formData.email)) {
-      setErrors({ ...errors, email: 'Please enter a valid email address' });
-      return;
-    }
-
-    // Simulate OTP sending
-    setIsOtpSent(true);
-    // In a real app, this would make an API call to send OTP
-    console.log('OTP sent to:', formData.email);
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!formData.otp) {
-      setErrors({ ...errors, otp: 'Please enter OTP' });
-      return;
-    }
-
-    // Simulate OTP verification
-    // In a real app, this would verify against the backend
-    if (formData.otp === '123456') { // Demo OTP
-      setIsOtpVerified(true);
-      setErrors({ ...errors, otp: '' });
-    } else {
-      setErrors({ ...errors, otp: 'Invalid OTP' });
-    }
-  };
+  // OTP functions have been removed
 
   const handleNext = () => {
     if (validateStep(step)) {
@@ -140,20 +109,72 @@ const Register = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateStep(step)) {
-      // Create user profile
-      const userProfile: UserProfile = {
-        ...formData,
-        ...financialMetrics,
-      };
-      
-      // Store in context/localStorage
-      login(userProfile);
-      
-      // Navigate to dashboard
-      navigate('/dashboard');
+      try {
+        // Set loading state
+        setErrors({});
+        setIsSubmitting(true);
+        
+        // Create a registration data object with all required fields
+        const registrationData: ServerRegistrationData = {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword, // Include confirmPassword for server validation
+          age: formData.age,
+          location: formData.location,
+          salary: formData.salary,
+          fixedExpenses: formData.fixedExpenses,
+          variableExpenses: formData.variableExpenses,
+          riskTolerance: formData.riskTolerance,
+          // Include calculated metrics
+          monthlySurplus: financialMetrics.monthlySurplus,
+          emergencyFund: financialMetrics.emergencyFund,
+          investableAmount: financialMetrics.investableAmount
+        };
+        
+        // Register the user in the database
+        await registerUser(registrationData);
+        
+        console.log("User successfully registered and logged in");
+        
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('Registration error:', error);
+        let errorMessage = 'Failed to register. Please try again.';
+        
+        if (error instanceof Error) {
+          errorMessage = error.message;
+          
+          // Handle specific error cases
+          if (errorMessage.includes('already exists')) {
+            setErrors({ ...errors, email: 'A user with this email already exists' });
+            setStep(1); // Return to first step to fix email
+            return;
+          } else if (errorMessage.includes('Password must be')) {
+            setErrors({ ...errors, password: errorMessage });
+            setStep(1); // Return to first step to fix password
+            return;
+          } else if (errorMessage.includes('valid email')) {
+            setErrors({ ...errors, email: 'Please enter a valid email address' });
+            setStep(1); // Return to first step to fix email
+            return;
+          }
+        }
+        
+        setErrors({ 
+          ...errors, 
+          submit: errorMessage
+        });
+        
+        // Display alert with more detailed error information
+        console.log('Detailed error information:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -227,68 +248,21 @@ const Register = () => {
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                       Email
                     </label>
-                    <div className="flex gap-2">
-                      <div className="relative flex-grow">
-                        <input
-                          type="email"
-                          id="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          className={`w-full px-4 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                            errors.email ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        />
-                        <Mail size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleSendOtp}
-                        disabled={isOtpVerified}
-                        className={`px-4 py-2 rounded-md ${
-                          isOtpVerified
-                            ? 'bg-green-100 text-green-700 cursor-not-allowed'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                    <div className="relative">
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                          errors.email ? 'border-red-500' : 'border-gray-300'
                         }`}
-                      >
-                        {isOtpVerified ? 'Verified' : isOtpSent ? 'Resend OTP' : 'Send OTP'}
-                      </button>
+                      />
+                      <Mail size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     </div>
                     {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
                   </div>
-
-                  {isOtpSent && !isOtpVerified && (
-                    <div>
-                      <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-1">
-                        Enter OTP
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          id="otp"
-                          name="otp"
-                          value={formData.otp}
-                          onChange={handleInputChange}
-                          placeholder="Enter 6-digit OTP"
-                          maxLength={6}
-                          className={`w-full px-4 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                            errors.otp ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        />
-                        <button
-                          type="button"
-                          onClick={handleVerifyOtp}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                        >
-                          Verify
-                        </button>
-                      </div>
-                      {errors.otp && <p className="mt-1 text-sm text-red-500">{errors.otp}</p>}
-                      <p className="mt-1 text-xs text-gray-500">
-                        For demo purposes, use OTP: 123456
-                      </p>
-                    </div>
-                  )}
 
                   <div>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
@@ -540,6 +514,12 @@ const Register = () => {
                 </div>
               )}
               
+              {errors.submit && (
+                <div className="mt-4 bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                  {errors.submit}
+                </div>
+              )}
+                
               <div className="mt-8 flex justify-between">
                 {step > 1 ? (
                   <button
@@ -564,9 +544,20 @@ const Register = () => {
                 ) : (
                   <button
                     type="submit"
-                    className="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                    disabled={isSubmitting}
+                    className="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
                   >
-                    Complete Profile
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Saving Profile...
+                      </>
+                    ) : (
+                      'Complete Profile'
+                    )}
                   </button>
                 )}
               </div>

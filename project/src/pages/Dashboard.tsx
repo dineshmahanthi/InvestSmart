@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { TrendingUp, IndianRupee, AlertCircle, PiggyBank, ArrowRight } from 'lucide-react';
+import { TrendingUp, IndianRupee, AlertCircle, PiggyBank, ArrowRight, Edit2, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { generatePortfolioRecommendations } from '../services/investmentService';
 import { formatIndianCurrency } from '../services/marketService';
@@ -8,6 +9,8 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchNewsData } from '../services/newsService';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import InvestmentDashboardIcon from '../components/ui/InvestmentDashboardIcon';
+import ProfileEditForm from '../components/profile/ProfileEditForm';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -16,7 +19,8 @@ const Dashboard = () => {
     queryFn: fetchNewsData,
   });
   
-  const [portfolio, setPortfolio] = useState(null);
+  const [portfolio, setPortfolio] = useState<ReturnType<typeof generatePortfolioRecommendations> | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -25,10 +29,14 @@ const Dashboard = () => {
     }
   }, [user]);
 
+  // If user is not authenticated, redirect to login
+  // In a real application, you would typically use a protected route component
+  // or a router navigation guard for this, but we'll handle it directly here
   if (!user || !portfolio) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+        <p className="text-gray-600">Loading your dashboard...</p>
       </div>
     );
   }
@@ -55,10 +63,43 @@ const Dashboard = () => {
       <Header />
       
       <div className="container mx-auto px-4 py-8 flex-grow">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Welcome, {user.name}</h1>
-          <p className="text-gray-600">Here's your personalized financial dashboard</p>
+        <div className="mb-8 flex flex-wrap items-center justify-between">
+          <div className="flex items-center mb-4 md:mb-0">
+            <div className="mr-4">
+              <InvestmentDashboardIcon size={56} primaryColor="#1E40AF" accentColor="#10B981" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Welcome, {user.name}</h1>
+              <p className="text-gray-600">Here's your personalized financial dashboard</p>
+            </div>
+          </div>
+          <div>
+            <button 
+              onClick={() => setIsEditingProfile(!isEditingProfile)}
+              className="flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50"
+            >
+              {isEditingProfile ? (
+                <>
+                  <User size={16} className="mr-2" /> View Dashboard
+                </>
+              ) : (
+                <>
+                  <Edit2 size={16} className="mr-2" /> Edit Profile
+                </>
+              )}
+            </button>
+          </div>
         </div>
+        
+        {isEditingProfile ? (
+          <ProfileEditForm onCancel={() => {
+            setIsEditingProfile(false);
+            // Force portfolio recalculation when user profile is updated
+            if (user) {
+              setPortfolio(generatePortfolioRecommendations(user));
+            }
+          }} />
+        ) : null}
         
         {/* Financial Summary */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -123,12 +164,12 @@ const Dashboard = () => {
                     nameKey="name"
                     label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                   >
-                    {pieChartData.map((entry, index) => (
+                    {pieChartData.map((_entry, index: number) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value, name, props) => [
+                    formatter={(value: number, _name: string, props: any) => [
                       `${formatIndianCurrency(props.payload.amount)} (${value.toFixed(0)}%)`, 
                       props.payload.category
                     ]}
@@ -153,7 +194,7 @@ const Dashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip formatter={(value) => formatIndianCurrency(value)} />
+                  <Tooltip formatter={(value: any) => formatIndianCurrency(Number(value))} />
                   <Bar dataKey="amount" fill="#3B82F6" />
                 </BarChart>
               </ResponsiveContainer>
@@ -177,7 +218,7 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {portfolio.investments.map((investment, index) => (
+                {portfolio.investments.map((investment: any, index: number) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{investment.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{investment.category}</td>
@@ -198,13 +239,31 @@ const Dashboard = () => {
           </div>
         </div>
         
+        {/* Stock Prediction CTA */}
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 rounded-lg shadow-md mb-8 text-white">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-4 md:mb-0">
+              <h2 className="text-xl font-bold mb-2">Stock Predictions & Analysis</h2>
+              <p className="text-blue-100">
+                Get AI-powered predictions for popular stocks and personalized recommendations based on your risk profile.
+              </p>
+            </div>
+            <Link 
+              to="/stocks" 
+              className="bg-white text-blue-600 px-6 py-2 rounded-md font-medium hover:bg-blue-50 transition-colors flex items-center"
+            >
+              Explore Stocks <ArrowRight size={16} className="ml-2" />
+            </Link>
+          </div>
+        </div>
+
         {/* Latest News */}
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold">Latest Financial News</h2>
-            <a href="#" className="text-blue-600 hover:underline flex items-center text-sm">
+            <Link to="/news" className="text-blue-600 hover:underline flex items-center text-sm">
               View all news <ArrowRight size={16} className="ml-1" />
-            </a>
+            </Link>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
