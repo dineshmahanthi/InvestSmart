@@ -32,9 +32,22 @@ const mockMarketData: MarketData[] = [
   },
 ];
 
-// In a real app, this would fetch from an API
+// Fetch market data from API
 export async function fetchMarketData(): Promise<MarketData[]> {
-  // Simulate API call
+  try {
+    // Try to fetch from the API first
+    const response = await fetch('/api/market-data');
+    
+    // If API is ready and returns valid data, use it
+    if (response.ok) {
+      const data = await response.json();
+      return data;
+    }
+  } catch (error) {
+    console.warn('Failed to fetch market data from API, falling back to mock data:', error);
+  }
+  
+  // Fall back to mock data if API fails or is not yet implemented
   return new Promise((resolve) => {
     setTimeout(() => {
       // Add some randomness to make data look dynamic
