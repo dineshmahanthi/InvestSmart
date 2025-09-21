@@ -21,6 +21,7 @@ const Register = () => {
     confirmPassword: '',
     age: 30,
     location: '',
+    photoUrl: '',
     salary: 75000,
     fixedExpenses: 25000,
     variableExpenses: 15000,
@@ -125,6 +126,7 @@ const Register = () => {
           confirmPassword: formData.confirmPassword, // Include confirmPassword for server validation
           age: formData.age,
           location: formData.location,
+          photoUrl: formData.photoUrl,
           salary: formData.salary,
           fixedExpenses: formData.fixedExpenses,
           variableExpenses: formData.variableExpenses,
@@ -342,6 +344,91 @@ const Register = () => {
                       }`}
                     />
                     {errors.location && <p className="mt-1 text-sm text-red-500">{errors.location}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Profile Photo (Optional)
+                    </label>
+                    <div className="flex items-start gap-4">
+                      {/* Photo Preview */}
+                      {formData.photoUrl ? (
+                        <div className="relative w-24 h-24">
+                          <img
+                            src={formData.photoUrl}
+                            alt="Profile preview"
+                            className="w-24 h-24 rounded-full object-cover border border-gray-300"
+                            onError={(e) => {
+                              e.currentTarget.src = "https://via.placeholder.com/100?text=Error";
+                              e.currentTarget.alt = "Invalid image URL";
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setFormData({...formData, photoUrl: ''})}
+                            className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                          >
+                            &times;
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-lg font-semibold">
+                          {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                      )}
+                      
+                      {/* URL Input */}
+                      <div className="flex-grow">
+                        <div className="space-y-3">
+                          <div>
+                            <input
+                              type="text"
+                              id="photoUrl"
+                              name="photoUrl"
+                              value={formData.photoUrl || ''}
+                              onChange={handleInputChange}
+                              placeholder="Enter photo URL"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">
+                              You can enter a URL to your profile photo
+                            </p>
+                          </div>
+                          
+                          {/* Note: File upload will be added after registration */}
+                          <div className="text-xs text-gray-500">
+                            <p>* You'll be able to upload a photo directly after registration</p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-xs text-gray-600 mb-1">Try these sample photos:</p>
+                            <div className="flex gap-2">
+                              <button 
+                                type="button" 
+                                className="text-xs text-blue-600 hover:underline"
+                                onClick={() => setFormData({...formData, photoUrl: "https://randomuser.me/api/portraits/men/44.jpg"})}
+                              >
+                                Sample 1
+                              </button>
+                              <button 
+                                type="button" 
+                                className="text-xs text-blue-600 hover:underline"
+                                onClick={() => setFormData({...formData, photoUrl: "https://randomuser.me/api/portraits/women/66.jpg"})}
+                              >
+                                Sample 2
+                              </button>
+                              <button 
+                                type="button" 
+                                className="text-xs text-blue-600 hover:underline"
+                                onClick={() => setFormData({...formData, photoUrl: "https://randomuser.me/api/portraits/men/32.jpg"})}
+                              >
+                                Sample 3
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

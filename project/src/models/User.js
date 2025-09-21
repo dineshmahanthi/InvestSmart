@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    photoUrl: {
+      type: String,
+      trim: true,
+    },
     // Financial information
     salary: {
       type: Number,

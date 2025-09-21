@@ -3,13 +3,15 @@ import { UserProfile } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { calculateFinancialMetrics } from '../../services/investmentService';
 import { formatIndianCurrency } from '../../services/marketService';
+import { getAvatars, getRandomAvatars, generateFreshAvatar, AvatarImage } from '../../services/aiProfileService';
+import { Sparkles, X, Check, ImageIcon, RefreshCw } from 'lucide-react';
 
 interface ProfileEditFormProps {
   onCancel: () => void;
 }
 
 const ProfileEditForm = ({ onCancel }: ProfileEditFormProps) => {
-  const { user, updateProfile, isLoading } = useAuth();
+    const { user, updateProfile, isLoading } = useAuth();
   const [formData, setFormData] = useState<Partial<UserProfile>>({
     name: '',
     age: 0,
@@ -19,9 +21,13 @@ const ProfileEditForm = ({ onCancel }: ProfileEditFormProps) => {
     fixedExpenses: 0,
     variableExpenses: 0,
     riskTolerance: 'medium',
+    photoUrl: '',
   });
+  const [avatars, setAvatars] = useState<AvatarImage[]>(getAvatars());
+  const [showAvatars, setShowAvatars] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const [photoError, setPhotoError] = useState<string>('');
 
   // Initialize form with user data
   useEffect(() => {
@@ -35,6 +41,7 @@ const ProfileEditForm = ({ onCancel }: ProfileEditFormProps) => {
         fixedExpenses: user.fixedExpenses,
         variableExpenses: user.variableExpenses,
         riskTolerance: user.riskTolerance,
+        photoUrl: user.photoUrl || '',
       });
     }
   }, [user]);
@@ -61,6 +68,45 @@ const ProfileEditForm = ({ onCancel }: ProfileEditFormProps) => {
     }
   };
 
+  // Toggle avatar display
+  const toggleAvatarsDisplay = () => {
+    setShowAvatars(prev => !prev);
+    if (!showAvatars) {
+      // Generate fresh avatars when opening the selection
+      setAvatars(getRandomAvatars(12));
+    }
+  };
+  
+  // Select an avatar
+  const selectAvatar = (avatar: AvatarImage) => {
+    setFormData(prev => ({
+      ...prev,
+      photoUrl: avatar.url
+    }));
+    
+    // Hide avatars after selection
+    setShowAvatars(false);
+    
+    setSuccessMessage('Avatar selected successfully!');
+    
+    // Clear success message after 2 seconds
+    setTimeout(() => {
+      setSuccessMessage('');
+    }, 2000);
+  };
+  
+  // Generate new set of random avatars
+  const refreshAvatars = () => {
+    setAvatars(getRandomAvatars(12));
+    setPhotoError('');
+  };
+  
+  // Generate a single fresh avatar and select it
+  const generateNewAvatar = () => {
+    const freshAvatar = generateFreshAvatar();
+    selectAvatar(freshAvatar);
+  };
+  
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
@@ -122,6 +168,164 @@ const ProfileEditForm = ({ onCancel }: ProfileEditFormProps) => {
       )}
       
       <form onSubmit={handleSubmit}>
+        {/* Profile Photo Section */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Profile Photo
+          </label>
+          <div className="flex flex-col md:flex-row items-start gap-6">
+            {/* Profile Image Preview */}
+            <div className="relative">
+              {formData.photoUrl ? (
+                <div className="relative">
+                  <img 
+                    src={formData.photoUrl} 
+                    alt="Profile"
+                    className="w-32 h-32 rounded-full object-cover border-2 border-gray-200"
+                    onError={(e) => {
+                      console.error('Image failed to load:', formData.photoUrl);
+                      e.currentTarget.src = "https://via.placeholder.com/100?text=Error";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, photoUrl: ''})}
+                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold text-xl">
+                  {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex-1 space-y-4">
+              {/* Random Avatars Section */}
+              <div className="space-y-3">
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={18} className="text-purple-500" />
+                      <label className="text-sm font-medium text-gray-700">
+                        Choose a Random Avatar
+                      </label>
+                    </div>
+                    
+                    {/* Toggle button to show/hide avatars */}
+                    <button
+                      type="button"
+                      onClick={toggleAvatarsDisplay}
+                      className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      {showAvatars ? 'Hide Options' : 'Show Options'}
+                    </button>
+                  </div>
+                  
+                  {/* Avatar Gallery - Only shown when showAvatars is true */}
+                  {showAvatars && (
+                    <>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                        {avatars.map((avatar) => (
+                          <button
+                            key={avatar.id}
+                            type="button"
+                            onClick={() => selectAvatar(avatar)}
+                            className={`relative rounded-lg overflow-hidden transition-all hover:opacity-90 border-2 border-transparent hover:border-purple-300`}
+                          >
+                            <img 
+                              src={avatar.url} 
+                              alt={avatar.alt}
+                              className="w-full aspect-square object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <div className="flex justify-between mt-2">
+                        {/* Refresh avatars button */}
+                        <button
+                          type="button"
+                          onClick={refreshAvatars}
+                          className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800"
+                        >
+                          <RefreshCw size={14} />
+                          Refresh Options
+                        </button>
+                        
+                        {/* Generate unique avatar button */}
+                        <button
+                          type="button"
+                          onClick={generateNewAvatar}
+                          className="flex items-center gap-1 text-sm text-purple-600 hover:text-purple-800"
+                        >
+                          <Sparkles size={14} />
+                          Random Avatar
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  
+                  {/* Show selected avatar if one is selected and options are hidden */}
+                  {!showAvatars && formData.photoUrl && (
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-20 h-20">
+                        <img 
+                          src={formData.photoUrl} 
+                          alt="Selected Avatar" 
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                        <div className="absolute bottom-0 right-0 bg-green-500 text-white p-1 rounded-tl-md">
+                          <Check size={14} />
+                        </div>
+                      </div>
+                      <div className="text-sm text-green-600">Avatar saved! Click "Show Options" to change.</div>
+                    </div>
+                  )}
+                  
+                  {/* Error message */}
+                  {photoError && (
+                    <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-sm text-red-600 font-medium">{photoError}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Only show OR divider and URL input when avatars are not being displayed */}
+              {!showAvatars && (
+                <>
+                  {/* OR divider */}
+                  <div className="flex items-center">
+                    <div className="flex-grow border-t border-gray-300"></div>
+                    <span className="flex-shrink mx-4 text-gray-500 text-sm">OR</span>
+                    <div className="flex-grow border-t border-gray-300"></div>
+                  </div>
+                  
+                  {/* URL Input Section */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block flex items-center gap-2">
+                      <ImageIcon size={16} />
+                      Use a custom photo URL
+                    </label>
+                    <input
+                      type="text"
+                      id="photoUrl"
+                      name="photoUrl"
+                      value={formData.photoUrl || ''}
+                      onChange={handleInputChange}
+                      placeholder="Enter photo URL"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">

@@ -65,8 +65,33 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-8 flex-grow">
         <div className="mb-8 flex flex-wrap items-center justify-between">
           <div className="flex items-center mb-4 md:mb-0">
-            <div className="mr-4">
-              <InvestmentDashboardIcon size={56} primaryColor="#1E40AF" accentColor="#10B981" />
+            <div className="mr-4 flex items-center">
+              {user.photoUrl ? (
+                <div className="relative">
+                  <img 
+                    src={user.photoUrl} 
+                    alt={user.name} 
+                    className="w-16 h-16 rounded-full object-cover border-2 border-blue-600"
+                    onError={(e) => {
+                      console.error('Dashboard - Image failed to load:', user.photoUrl);
+                      // Replace with initials avatar if image fails to load
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        parent.innerHTML = `<div class="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white text-xl font-semibold">
+                          ${user.name.charAt(0).toUpperCase()}
+                        </div>`;
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white text-xl font-semibold">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="ml-2">
+                <InvestmentDashboardIcon size={40} primaryColor="#1E40AF" accentColor="#10B981" />
+              </div>
             </div>
             <div>
               <h1 className="text-3xl font-bold mb-2">Welcome, {user.name}</h1>

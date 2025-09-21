@@ -1,15 +1,16 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserProfile, ServerRegistrationData } from '../types';
 
-interface AuthContextType {
+export interface AuthContextType {
   user: UserProfile | null;
-  isAuthenticated: boolean;
+  token: string | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (formData: ServerRegistrationData) => Promise<void>;
+  register: (userData: Partial<UserProfile> & { email: string; password: string }) => Promise<void>;
   logout: () => void;
-  updateProfile: (updateData: Partial<UserProfile>) => Promise<void>;
+  updateProfile: (userData: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -73,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // Create a demo user profile
         const demoUser: UserProfile = {
+          id: "user-rajesh-123",
           name: "Rajesh Kumar",
           email: "rajesh@example.com",
           age: 35,
@@ -83,7 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           riskTolerance: "medium",
           monthlySurplus: 35000,
           emergencyFund: 250000,
-          investableAmount: 26250
+          investableAmount: 26250,
+          photoUrl: "https://randomuser.me/api/portraits/men/44.jpg"
         };
         
         // Generate a simple token
@@ -101,7 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("Using hard-coded credentials for demo user Priya");
         
         // Create a demo user profile for Priya
-        const demoUser: UserProfile = {
+        const priyaUser: UserProfile = {
+          id: "user-priya-456",
           name: "Priya Sharma",
           email: "priya@example.com",
           age: 32,
@@ -112,25 +116,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           riskTolerance: "high",
           monthlySurplus: 36000,
           emergencyFund: 280000,
-          investableAmount: 27000
+          investableAmount: 27000,
+          photoUrl: "https://randomuser.me/api/portraits/women/66.jpg"
         };
         
         // Generate a simple token
         const demoToken = `demo-token-${Date.now()}`;
         
         // Save user data and token
-        setUser(demoUser);
+        setUser(priyaUser);
         setToken(demoToken);
         setIsAuthenticated(true);
-        localStorage.setItem('investsmartUser', JSON.stringify(demoUser));
+        localStorage.setItem('investsmartUser', JSON.stringify(priyaUser));
         localStorage.setItem('investsmartToken', demoToken);
         
-        return demoUser;
+        return priyaUser;
       } else if (email === "anand@example.com" && (password === "Password123" || password === " Password123")) {
         console.log("Using hard-coded credentials for demo user Anand");
         
         // Create a demo user profile for Anand
         const demoUser: UserProfile = {
+          id: "user-anand-789",
           name: "Anand Verma",
           email: "anand@example.com",
           age: 40,
@@ -141,7 +147,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           riskTolerance: "high",
           monthlySurplus: 45000,
           emergencyFund: 350000,
-          investableAmount: 33750
+          investableAmount: 33750,
+          photoUrl: "https://randomuser.me/api/portraits/men/32.jpg"
         };
         
         // Generate a simple token
@@ -322,6 +329,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   };
+  
+  // AI-generated images are now used instead of file uploads
 
   return (
     <AuthContext.Provider value={{ 
@@ -332,7 +341,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login, 
       register, 
       logout, 
-      updateProfile 
+      updateProfile
     }}>
       {children}
     </AuthContext.Provider>

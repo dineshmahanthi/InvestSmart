@@ -40,7 +40,7 @@ const Header = () => {
   const handleLogout = () => {
     logout();
     setIsProfileMenuOpen(false);
-    navigate('/');
+    navigate('/login');
   };
   
   // Get user's initials for the avatar
@@ -57,7 +57,7 @@ const Header = () => {
   return (
     <header 
       className={`sticky top-0 z-50 w-full transition-all duration-300 ${
-        isScrolled || location.pathname !== '/' 
+        isScrolled || (location.pathname !== '/landing' && location.pathname !== '/') 
           ? 'bg-white shadow-md text-gray-800' 
           : 'bg-transparent text-white'
       }`}
@@ -66,7 +66,7 @@ const Header = () => {
         <Link to="/" className="flex items-center gap-2">
           <TrendingUp 
             size={28} 
-            className={isScrolled || location.pathname !== '/' ? 'text-blue-600' : 'text-white'}
+            className={isScrolled || (location.pathname !== '/landing' && location.pathname !== '/') ? 'text-blue-600' : 'text-white'}
           />
           <span className="font-bold text-xl">InvestSmart</span>
         </Link>
@@ -77,7 +77,7 @@ const Header = () => {
             <Link 
               to="/" 
               className={`font-medium hover:text-blue-500 transition-colors ${
-                location.pathname === '/' ? 'text-blue-600' : ''
+                location.pathname === '/' || location.pathname === '/landing' ? 'text-blue-600' : ''
               }`}
             >
               Home
@@ -123,6 +123,22 @@ const Header = () => {
             >
               Stocks
             </Link>
+            <Link 
+              to="/expenses" 
+              className={`font-medium hover:text-blue-500 transition-colors ${
+                location.pathname === '/expenses' ? 'text-blue-600' : ''
+              }`}
+            >
+              Expenses
+            </Link>
+            <Link 
+              to="/tools" 
+              className={`font-medium hover:text-blue-500 transition-colors ${
+                location.pathname === '/tools' ? 'text-blue-600' : ''
+              }`}
+            >
+              Tools
+            </Link>
           </nav>
           
           {isAuthenticated ? (
@@ -131,9 +147,27 @@ const Header = () => {
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 className="flex items-center gap-2 focus:outline-none"
               >
-                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-                  {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-                </div>
+                {user?.photoUrl ? (
+                  <img 
+                    src={user.photoUrl} 
+                    alt={user.name || "User"}
+                    className="w-9 h-9 rounded-full object-cover border border-gray-200"
+                    onError={(e) => {
+                      console.error('Header - Image failed to load:', user.photoUrl);
+                      // Replace with initials avatar if image fails to load
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        parent.innerHTML = `<div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+                          ${user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                        </div>`;
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  </div>
+                )}
                 <ChevronDown size={16} className={isProfileMenuOpen ? "transform rotate-180" : ""} />
               </button>
               
@@ -187,9 +221,27 @@ const Header = () => {
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 className="focus:outline-none"
               >
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-                  {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-                </div>
+                {user?.photoUrl ? (
+                  <img 
+                    src={user.photoUrl} 
+                    alt={user.name || "User"}
+                    className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                    onError={(e) => {
+                      console.error('Mobile Header - Image failed to load:', user.photoUrl);
+                      // Replace with initials avatar if image fails to load
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        parent.innerHTML = `<div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+                          ${user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                        </div>`;
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  </div>
+                )}
               </button>
               
               {isProfileMenuOpen && (
@@ -240,7 +292,7 @@ const Header = () => {
               to="/" 
               onClick={closeMenu}
               className={`font-medium hover:text-blue-500 py-2 transition-colors ${
-                location.pathname === '/' ? 'text-blue-600' : ''
+                location.pathname === '/' || location.pathname === '/landing' ? 'text-blue-600' : ''
               }`}
             >
               Home
@@ -292,6 +344,24 @@ const Header = () => {
               }`}
             >
               Stocks
+            </Link>
+            <Link 
+              to="/expenses" 
+              onClick={closeMenu}
+              className={`font-medium hover:text-blue-500 py-2 transition-colors ${
+                location.pathname === '/expenses' ? 'text-blue-600' : ''
+              }`}
+            >
+              Expenses
+            </Link>
+            <Link 
+              to="/tools" 
+              onClick={closeMenu}
+              className={`font-medium hover:text-blue-500 py-2 transition-colors ${
+                location.pathname === '/tools' ? 'text-blue-600' : ''
+              }`}
+            >
+              Tools
             </Link>
             
             {!isAuthenticated ? (
